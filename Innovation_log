@@ -1,0 +1,8 @@
+*** DCU Log Reader APP ***
+
+--- Version 1.0 ---
+* 28.08.2023
+* connect info renksiz yap
+* büyük küçük harf düzenleme
+* Export to PDF -> kaydedilecek dosyaya isim verme ve kaydedilecek yeri seçme
+* Rapor no ayarlaması

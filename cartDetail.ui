@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>999</width>
+    <height>764</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="connect">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>80</y>
+      <width>121</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Connect</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="connInfo">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>670</y>
+      <width>171</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Connection status : </string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="Line" name="line">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>40</y>
+      <width>21</width>
+      <height>571</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Vertical</enum>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="readRecords">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>80</y>
+      <width>161</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Read Records</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="print">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>80</y>
+      <width>161</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Export to PDF</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="portUsed">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>180</y>
+      <width>251</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Port used : </string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="cartName">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>310</y>
+      <width>251</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Hardware version : </string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="recordDetail">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>160</y>
+      <width>521</width>
+      <height>531</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sfVersion">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>380</y>
+      <width>251</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Software version :</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="karsanPartRef">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>450</y>
+      <width>251</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>KARSAN part reference : </string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="productID">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>250</y>
+      <width>251</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Product ID : </string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>999</width>
+     <height>26</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
