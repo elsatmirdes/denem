@@ -5,4 +5,8 @@
 * connect info renksiz yap
 * büyük küçük harf düzenleme
 * Export to PDF -> kaydedilecek dosyaya isim verme ve kaydedilecek yeri seçme
+*
+
+* 29.08.2023
 * Rapor no ayarlaması
+* pdf içerik düzenlemesi (header kısmı)
