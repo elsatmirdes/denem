@@ -10,3 +10,13 @@
 * 29.08.2023
 * Rapor no ayarlaması
 * pdf içerik düzenlemesi (header kısmı)
+* ayrı ayrı bağlanma ve veri okuma butonları içi bekleme ekranı fonksiyonları yazma
+
+* 31.08.2023
+* asenkron programlama ile uygulama iyleştirmesi
+* asenkron şekilde butonlara basıldığında bekeleme ekranı gösterme
+
+* 01.09.2023
+* icon eklendi
+* bekleme ekranı yazıları ayarlandı
+* clear record butonu eklendi texbox taki yazıları silmek için

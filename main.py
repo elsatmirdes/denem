@@ -1,14 +1,16 @@
 import math
 
-from PyQt5.QtWidgets import QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QMessageBox, QFileDialog, QGraphicsBlurEffect
 from crcmod import crcmod
 
-from LoadingThread import LoadingThread
-from loadingScreen import LoadingTranslucentScreen
+from loadingScreen import LoadingScreen
+
+from threadWorker import WorkerThread
+from PyQt5.QtCore import pyqtSignal
 from form import Ui_MainWindow
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, QThread
 from PyQt5.QtCore import pyqtSlot
 import sys
 import time
@@ -16,6 +18,8 @@ import serial
 from serial.tools import list_ports
 import printerDetail
 from crccheck.crc import Crc32Mpeg2
+
+import asyncio
 import os
 
 
@@ -71,12 +75,26 @@ class App(QtWidgets.QMainWindow):
         self.connInfo = False
         self.reciveData = {}
 
+        self.worker_thread = None  # İş parçacığını başlatmak ve kontrol etmek için kullanılacak
 
         self.ui.print.clicked.connect(self.printData)
-        self.ui.readRecords.clicked.connect(self.readRecords)
 
-        self.ui.connect.clicked.connect(self.connectPort)
 
+        self.loading_screen = LoadingScreen(self)
+        self.loading_screen.hide()  # Başlangıçta yükleme ekranını gizle
+
+        self.ui.connect.clicked.connect(lambda:self.start_worker_thread('Connect'))
+        self.ui.disconnectBtn.clicked.connect(lambda : self.start_worker_thread('Disconnect'))
+        self.ui.readRecords.clicked.connect(lambda : self.start_worker_thread('read'))
+        try:
+            self.ui.clearData.clicked.connect(lambda : self.ui.recordDetail.clear())
+        except:
+            pass
+
+        self.dots = ""
+        self.operationName = ""
+        self.loading_screen.dot_timer.timeout.connect(self.updateDots)
+        self.loading_screen.dot_timer.start(500)  # Her 500 milisaniyede bir işareti güncelle
 
         self.ui.readRecords.setEnabled(False)
         self.ui.print.setEnabled(False)
@@ -294,114 +312,95 @@ class App(QtWidgets.QMainWindow):
         except:
             return False
 
-    def connectPort(self):
-        conStatus = self.ui.connect.text()
-        print(conStatus)
+    async def connectPort(self):
+        ports = list_ports.comports()
+        available_ports = [port.device for port in ports]
 
-        if conStatus == "Disconnect":
-            self.disconnectCart()
-            self.connInfo = False
-        else:
-
-            self.ui.connInfo.setText("Connecting...")
-
-            ports = list_ports.comports()
-            available_ports = [port.device for port in ports]
-
-            baudrate = 115200
-            try:
-                start_time = time.time()
-                for i in available_ports:
+        baudrate = 115200
+        try:
+            start_time = time.time()
+            for i in available_ports:
+                try:
                     try:
+                        succesCom = i
                         try:
-                            succesCom = i
-                            try:
-                                self.serial_port = serial.Serial(i, baudrate, timeout=0.1,writeTimeout=0.1)
-                                # self.com = succesCom
-                                print(succesCom)
-                            except:
-                                pass
-                            result = True
+                            self.serial_port = serial.Serial(i, baudrate, timeout=0.1,writeTimeout=0.1)
+                            # self.com = succesCom
+                            print(succesCom)
+                        except:
+                            pass
+                        result = True
 
-                            self.portConnControl(result,succesCom)
+                        self.portConnControl(result,succesCom)
 
-                            if self.connInfo == True:
-                                self.com = succesCom
-                                break
-                        except Exception as e:
-                            print(e)
+                        if self.connInfo == True:
+                            self.com = succesCom
+                            break
                     except Exception as e:
                         print(e)
+                except Exception as e:
+                    print(e)
 
-                total = time.time() - start_time
-                print(total)
-
-
-                if self.connInfo == False:
-                    print("falsee")
+            total = time.time() - start_time
+            print(total)
 
 
-                    self.ui.connInfo.setText("Connect Info : Failed")
-                    self.ui.portUsed.setText(f"Used Port : ")
-                    self.ui.connInfo.setStyleSheet(
-                        "background-color: crimson;color: white;border: 1px solid black;")
+            if self.connInfo == False:
+                self.ui.connInfo.setText("Connect Info : Failed")
+                self.ui.portUsed.setText(f"Used Port : ")
 
-                    print("Belirli port bulunamadı veya uygun geri mesaj alınamadı.")
-                else:
+                print("Belirli port bulunamadı veya uygun geri mesaj alınamadı.")
+            else:
 
-                    self.ui.portUsed.setText(f"Used Port : {self.com}")
-                    ## 10 01 : csk version , 10 02 : cart name,
-
-
-                    cartName = self.reciveData['16 2']
-                    cskVersion = self.reciveData['16 1']
-                    softwareVer = self.reciveData['16 3']
-
-                    cskName = self.cskVersion["1"]
-
-                    cartNumber = cartName[:4]
-                    version = " R"+cartName[4:6]
+                self.ui.portUsed.setText(f"Used Port : {self.com}")
+                ## 10 01 : csk version , 10 02 : cart name,
 
 
-                    ## 03 software version
-                    softwareVer1 = f"{softwareVer[1]}.{softwareVer[2:4]}.{softwareVer[4:6]}.{softwareVer[6:8]}"
+                cartName = self.reciveData['16 2']
+                cskVersion = self.reciveData['16 1']
+                softwareVer = self.reciveData['16 3']
 
-                    self.productId = ""
-                    ## ürün id 05 06 07
-                    self.productId += self.hexToDecimal(self.reciveData['16 5'])
-                    productId2 = self.reciveData['16 6']
-                    productId3 = self.reciveData['16 7']
+                cskName = self.cskVersion["1"]
 
-
-                    self.productId += self.hexToDecimal(productId2[2:4])
-                    self.productId += self.hexToDecimal(productId2[4:6])
-                    self.productId += self.hexToDecimal(productId2[6:8])
-
-                    self.productId += self.hexToDecimal(productId3[2:4])
-                    self.productId += self.hexToDecimal(productId3[4:6])
-                    self.productId += self.hexToDecimal(productId3[6:8])
+                cartNumber = cartName[:4]
+                version = " R"+cartName[4:6]
 
 
-                    self.ui.productID.setText(f"Product ID : {self.productId}")
-                    self.ui.cartName.setText(f"Hardware version: {cartNumber}{version}")
-                    self.ui.karsanPartRef.setText(f"KARSAN part reference : {cskName}")
-                    self.ui.sfVersion.setText(f"Software version: {softwareVer1}")
-                    self.ui.connInfo.setText("Connect info : Success")
+                ## 03 software version
+                softwareVer1 = f"{softwareVer[1]}.{softwareVer[2:4]}.{softwareVer[4:6]}.{softwareVer[6:8]}"
 
-                    self.ui.readRecords.setEnabled(True)
-                    self.ui.print.setEnabled(True)
+                self.productId = ""
+                ## ürün id 05 06 07
+                self.productId += self.hexToDecimal(self.reciveData['16 5'])
+                productId2 = self.reciveData['16 6']
+                productId3 = self.reciveData['16 7']
 
-                    self.updateLabel()
 
-            except Exception as e:
-                print(e)
+                self.productId += self.hexToDecimal(productId2[2:4])
+                self.productId += self.hexToDecimal(productId2[4:6])
+                self.productId += self.hexToDecimal(productId2[6:8])
+
+                self.productId += self.hexToDecimal(productId3[2:4])
+                self.productId += self.hexToDecimal(productId3[4:6])
+                self.productId += self.hexToDecimal(productId3[6:8])
+
+
+                self.ui.productID.setText(f"Product ID : {self.productId}")
+                self.ui.cartName.setText(f"Hardware version: {cartNumber}{version}")
+                self.ui.karsanPartRef.setText(f"KARSAN part reference : {cskName}")
+                self.ui.sfVersion.setText(f"Software version: {softwareVer1}")
+                self.ui.connInfo.setText("Connect info : Success")
+                self.ui.connect.hide()
+                self.ui.disconnectBtn.show()
+                self.ui.readRecords.setEnabled(True)
+                self.ui.print.setEnabled(True)
+
+        except Exception as e:
+            print(e)
 
     def portConnControl(self,result,succesCom):
         if result:
             if self.find_serial_port():
-
-                self.ui.connect.setText("Disconnect")
-
                 self.connInfo = True
             else:
                 self.connInfo = False
@@ -424,48 +423,43 @@ class App(QtWidgets.QMainWindow):
         decimal_metin = ' '.join(map(str, decimal_degerler))
         return decimal_metin
 
-    def disconnectCart(self):
+    async def disconnectCart(self):
         try:
             self.serial_port.close()
             self.ui.readRecords.setEnabled(False)
             self.ui.print.setEnabled(False)
 
+            self.ui.connect.setText("Connect")
+            self.ui.connInfo.setText("Connect info : ")
+            self.ui.productID.setText("Product ID : ")
+            self.ui.portUsed.setText(f"Port : ")
+
+            self.ui.cartName.setText(f"Hardware version: ")
+            self.ui.karsanPartRef.setText(f"KARSAN part reference :")
+            self.ui.sfVersion.setText(f"Software version : ")
+
+            self.ui.connInfo.setStyleSheet("background-color:white; : ")
+
+
+            self.ui.connect.show()
+            self.ui.disconnectBtn.hide()
+
         except:
             pass
 
-        self.ui.connect.setText("Connect")
-        self.ui.connInfo.setText("Connect info : ")
-        self.ui.productID.setText("Product ID : ")
-        self.ui.portUsed.setText(f"Port : ")
-
-        self.ui.cartName.setText(f"Hardware version: ")
-        self.ui.karsanPartRef.setText(f"KARSAN part reference :")
-        self.ui.sfVersion.setText(f"Software version : ")
-
-        self.ui.connInfo.setStyleSheet("background-color:white; : ")
-
-        self.ui.recordDetail.clear()
-
-    def updateLabel(self):
-        self.ui.portUsed.repaint()
-        self.ui.productID.repaint()
-        self.ui.cartName.repaint()
-        self.ui.sfVersion.repaint()
-        self.ui.karsanPartRef.repaint()
-        self.ui.connInfo.repaint()
-
     ## data düzenlenecek
-    def readRecords(self):
+    async def readRecords(self):
         sayac = 8
-        self.ui.recordDetail.clear()
+        self.ui.recordDetail.update()
 
         ## data düzenlenecek
         for i in range(8,38):
+
             # crc hesaplat
             input_data = f"58 0 1 16 {sayac} 0 0 0"
             print(sayac)
             dataSend = self.createCRCandData(input_data, sayac)
-            sayac += 1
+
             self.send_message(dataSend)
             res = self.receive_message()
 
@@ -490,24 +484,16 @@ class App(QtWidgets.QMainWindow):
                         print(e)
 
                 self.reciveData[f'{dataName1} {dataName2}'] = f'{reciveData}'
+                print(self.reciveData)
+                dataName = self.veri_dict[f'16 {sayac}']
+                data = self.reciveData[f'16 {sayac}']
 
+                await asyncio.sleep(0.1)
+                self.ui.recordDetail.append(f"{dataName} : {data}")
+
+                sayac += 1
             else:
                 print("\n Veri yanlış geldi!!")
-
-
-        say = 8
-
-        for write in range(8,38):
-            dataName = self.veri_dict[f'16 {say}']
-            data = self.reciveData[f'16 {say}']
-
-            say += 1
-
-            print(say)
-            self.ui.recordDetail.append(f"{dataName} : {data}")
-
-
-        print(self.reciveData)
 
     def printData(self):
         options = QFileDialog.Options()
@@ -521,7 +507,7 @@ class App(QtWidgets.QMainWindow):
                 location_file = str(os.getcwd())
                 self.replace = location_file.replace("\\", "/")
 
-                image_path = f"{self.replace}/System Data/header.png"
+                image_path = f"{self.replace}/System_Data/System_Data/Picture1.png"
                 report_num = "2023-001"
 
                 printerDetail.create_pdf_with_data(self.veri_dict,self.reciveData,fileName, image_path, report_num)
@@ -530,7 +516,33 @@ class App(QtWidgets.QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self,"ERROR",f"Veriler Düzgün yüklenemedi \nError Info : {e}")
 
+    ##loading screen
+    def start_worker_thread(self, task_name):
+        if self.worker_thread is None or not self.worker_thread.isRunning():
+            self.worker_thread = WorkerThread(self,task_name)
+            self.worker_thread.finished.connect(self.workerFinished)
+            self.worker_thread.start()
+
+    async def start_loading_screen(self,operationName):
+        print(operationName)
+        self.loading_screen.data = operationName
+        self.loading_screen.show()  # Yükleme ekranını göster
+        # await asyncio.sleep(1)
+
+    def workerFinished(self):
+        print("bitti")
+        # İşlem tamamlandığında yükleme ekranını gizle
+        self.loading_screen.hide()
+
+    def updateDots(self):
+        if len(self.dots) < 3:
+            self.dots += "."
+        else:
+            self.dots = "."
+        self.loading_screen.label2.setText(f'{self.operationName}{self.dots}')
+
 # for second result
+
 
 def run():
     ap = QtWidgets.QApplication(sys.argv)

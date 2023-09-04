@@ -30,19 +30,19 @@ def create_pdf_with_data(data_dict, veriDict,file_path, image_path, report_num):
     c = canvas.Canvas(f"{file_path}", pagesize=letter)
 
     # Üst kısımdaki resim ve tarih, rapor numarasını eklemek
-    c.drawImage(image_path, 35, 705, width=550, height=57)
-    c.setFont("Helvetica", 14)
+    c.drawImage(image_path, 70, 705, width=65, height=57)
+    c.setFont("Helvetica", 12)
     now = datetime.now().date()
     year = now.year
     month = now.month
     day = now.day
 
     rand = random.randint(100,1000)
-    c.drawString(400, 670, f"Tarih : {day}.{month}.{year}")
-    c.drawString(100, 670, f"Rapor No : {year}{month}{day}{rand}")
+    c.drawString(440, 730, f"Date : {day}.{month}.{year}")
+    c.drawString(70, 670, f"Report Number : {year}{month}{day}{rand}")
 
     # Verileri düzenli bir şekilde yazdırma
-    c.setFont("Helvetica-Bold", 16)
+    c.setFont("Helvetica-Bold", 12)
     y_position = 585  # Verilerin başlangıç yüksekliği
     say = 0
     sayac = 1
@@ -55,7 +55,6 @@ def create_pdf_with_data(data_dict, veriDict,file_path, image_path, report_num):
 
         sayac += 1
         ## veri alma
-
 
         draw_colored_text_box(c, 70, y_position, 460, 15, f"{value}: {data}", color)
         say = 1 - say  # Sıradaki rengi değiştirmek için
